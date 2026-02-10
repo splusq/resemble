@@ -1,0 +1,30 @@
+# resemble configuration
+# Copy to .testproxy.yml and customize for your project
+
+cache_repo: git@github.com:myorg/api-cache.git
+listen: ":9999"
+
+upstreams:
+  - host: api.example.com
+    scheme: https
+    routes:
+      - match: "/v1/*"
+        ttl: 24h
+      - match: "/v2/*"
+        ttl: 12h
+  - host: auth.example.com
+    scheme: https
+    routes:
+      - match: "/token"
+        ttl: 1h
+
+defaults:
+  ttl: 24h
+  mode: auto              # auto | record | replay
+  ignore_headers:
+    - Authorization
+    - X-Request-Id
+    - Date
+    - User-Agent
+  ignore_query: []
+  strict_drift: false     # exit non-zero on drift detection

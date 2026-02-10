@@ -1,0 +1,4 @@
+resemble
+.resemble-cache/
+.testproxy.yml
+*.test
