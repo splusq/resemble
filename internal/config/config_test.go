@@ -164,3 +164,73 @@ func TestLoad_InvalidTTL(t *testing.T) {
 		t.Error("expected error for invalid TTL")
 	}
 }
+
+func TestLoad_RESEMBLE_CONFIG(t *testing.T) {
+	t.Setenv("RESEMBLE_CONFIG", `
+defaults:
+  ttl: 12h
+  mode: record
+  ignore_headers:
+    - Authorization
+    - X-Request-Id
+  ignore_query:
+    - "*"
+  ignore_body: true
+`)
+
+	cfg, err := Load("/nonexistent/.testproxy.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Defaults.TTL != 12*time.Hour {
+		t.Errorf("ttl = %v, want 12h", cfg.Defaults.TTL)
+	}
+	if cfg.Defaults.Mode != "record" {
+		t.Errorf("mode = %q, want record", cfg.Defaults.Mode)
+	}
+	if len(cfg.Defaults.IgnoreHeaders) != 2 {
+		t.Errorf("ignore_headers count = %d, want 2", len(cfg.Defaults.IgnoreHeaders))
+	}
+	if len(cfg.Defaults.IgnoreQuery) != 1 || cfg.Defaults.IgnoreQuery[0] != "*" {
+		t.Errorf("ignore_query = %v, want [*]", cfg.Defaults.IgnoreQuery)
+	}
+	if !cfg.Defaults.IgnoreBody {
+		t.Error("ignore_body should be true")
+	}
+}
+
+func TestLoad_RESEMBLE_CONFIG_OverridesFile(t *testing.T) {
+	dir, _ := os.MkdirTemp("", "resemble-config-*")
+	defer os.RemoveAll(dir)
+
+	configPath := filepath.Join(dir, ".testproxy.yml")
+	os.WriteFile(configPath, []byte("listen: \":8888\"\ndefaults:\n  mode: replay\n"), 0644)
+
+	t.Setenv("RESEMBLE_CONFIG", `
+listen: ":7777"
+defaults:
+  mode: record
+`)
+
+	cfg, err := Load(configPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if cfg.Listen != ":7777" {
+		t.Errorf("listen = %q, want :7777 (env var should override file)", cfg.Listen)
+	}
+	if cfg.Defaults.Mode != "record" {
+		t.Errorf("mode = %q, want record (env var should override file)", cfg.Defaults.Mode)
+	}
+}
+
+func TestLoad_RESEMBLE_CONFIG_Invalid(t *testing.T) {
+	t.Setenv("RESEMBLE_CONFIG", "listen:\n  - invalid\n  nested: bad")
+
+	_, err := Load("/nonexistent/.testproxy.yml")
+	if err == nil {
+		t.Error("expected error for invalid YAML in RESEMBLE_CONFIG")
+	}
+}

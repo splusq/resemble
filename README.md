@@ -82,9 +82,26 @@ defaults:
   strict_drift: false
 ```
 
-**Config resolution**: CLI flags > env vars > `.testproxy.yml` > built-in defaults.
+**Config resolution**: CLI flags > individual `RESEMBLE_*` env vars > `RESEMBLE_CONFIG` env var > `.testproxy.yml` > built-in defaults.
 
 **Environment variables**: `RESEMBLE_CACHE_REPO`, `RESEMBLE_LISTEN`, `RESEMBLE_MODE`.
+
+**Inline config via `RESEMBLE_CONFIG`**: Pass the full YAML configuration as an environment variable. Useful in Docker Compose where you want all config in one place:
+
+```yaml
+services:
+  resemble:
+    image: ghcr.io/splusq/resemble
+    environment:
+      RESEMBLE_CONFIG: |
+        defaults:
+          ttl: 24h
+          mode: auto
+          ignore_headers: [Authorization, X-Request-Id]
+          ignore_query: ["*"]
+          ignore_body: true
+    command: ["start", "--upstream", "https://api.example.com"]
+```
 
 ## Cache Format
 
