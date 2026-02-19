@@ -25,7 +25,7 @@ func NewServer(addr, upstreamURL, mode string, ttl time.Duration, store *cache.S
 			Addr:         addr,
 			Handler:      handler,
 			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 60 * time.Second,
+			WriteTimeout: 5 * time.Minute,
 			IdleTimeout:  120 * time.Second,
 		},
 		handler: handler,

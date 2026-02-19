@@ -29,7 +29,7 @@ func NewHandler(store *cache.Store, upstreamURL, mode string, ttl time.Duration,
 		ttl:         ttl,
 		keyOpts:     keyOpts,
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 5 * time.Minute,
 		},
 	}
 }
