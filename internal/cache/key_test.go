@@ -217,6 +217,12 @@ func TestNormalizeQuery(t *testing.T) {
 			ignore: []string{"timestamp"},
 			want:   "a=1",
 		},
+		{
+			name:   "wildcard ignores all",
+			input:  "a=1&b=2&c=3",
+			ignore: []string{"*"},
+			want:   "",
+		},
 	}
 
 	for _, tt := range tests {
@@ -232,7 +238,7 @@ func TestNormalizeQuery(t *testing.T) {
 
 func TestHashBody(t *testing.T) {
 	t.Run("empty body", func(t *testing.T) {
-		got := hashBody(nil, nil)
+		got := hashBody(nil, nil, false)
 		if got != "" {
 			t.Errorf("empty body should return empty hash, got %q", got)
 		}
@@ -240,8 +246,8 @@ func TestHashBody(t *testing.T) {
 
 	t.Run("deterministic", func(t *testing.T) {
 		body := []byte(`{"key":"value"}`)
-		h1 := hashBody(body, nil)
-		h2 := hashBody(body, nil)
+		h1 := hashBody(body, nil, false)
+		h2 := hashBody(body, nil, false)
 		if h1 != h2 {
 			t.Errorf("hashes differ: %s vs %s", h1, h2)
 		}
@@ -250,12 +256,65 @@ func TestHashBody(t *testing.T) {
 	t.Run("ignore fields", func(t *testing.T) {
 		body1 := []byte(`{"name":"test","id":"123"}`)
 		body2 := []byte(`{"name":"test","id":"456"}`)
-		h1 := hashBody(body1, []string{"id"})
-		h2 := hashBody(body2, []string{"id"})
+		h1 := hashBody(body1, []string{"id"}, false)
+		h2 := hashBody(body2, []string{"id"}, false)
 		if h1 != h2 {
 			t.Errorf("ignoring field should produce same hash: %s vs %s", h1, h2)
 		}
 	})
+
+	t.Run("ignore all", func(t *testing.T) {
+		body := []byte(`{"name":"test","id":"123"}`)
+		got := hashBody(body, nil, true)
+		if got != "" {
+			t.Errorf("ignore all should return empty string, got %q", got)
+		}
+	})
+}
+
+func TestGenerateKey_IgnoreAllQuery(t *testing.T) {
+	r1, _ := http.NewRequest("GET", "http://localhost/v1/users?page=1&limit=10", nil)
+	r2, _ := http.NewRequest("GET", "http://localhost/v1/users?page=2&sort=desc", nil)
+
+	opts := KeyOptions{IgnoreQuery: []string{"*"}}
+	key1 := GenerateKey(r1, nil, opts)
+	key2 := GenerateKey(r2, nil, opts)
+
+	if key1 != key2 {
+		t.Errorf("wildcard ignore_query should produce same key: %s vs %s", key1, key2)
+	}
+}
+
+func TestGenerateKey_IgnoreAllBody(t *testing.T) {
+	body1 := []byte(`{"name":"alice","age":30}`)
+	body2 := []byte(`{"name":"bob","age":25}`)
+
+	r1, _ := http.NewRequest("POST", "http://localhost/v1/users", nil)
+	r2, _ := http.NewRequest("POST", "http://localhost/v1/users", nil)
+
+	opts := KeyOptions{IgnoreAllBody: true}
+	key1 := GenerateKey(r1, body1, opts)
+	key2 := GenerateKey(r2, body2, opts)
+
+	if key1 != key2 {
+		t.Errorf("ignore_all_body should produce same key: %s vs %s", key1, key2)
+	}
+}
+
+func TestGenerateKey_IgnoreAllBodyViaWildcard(t *testing.T) {
+	body1 := []byte(`{"name":"alice"}`)
+	body2 := []byte(`{"name":"bob"}`)
+
+	r1, _ := http.NewRequest("POST", "http://localhost/v1/users", nil)
+	r2, _ := http.NewRequest("POST", "http://localhost/v1/users", nil)
+
+	opts := KeyOptions{IgnoreBody: []string{"*"}}
+	key1 := GenerateKey(r1, body1, opts)
+	key2 := GenerateKey(r2, body2, opts)
+
+	if key1 != key2 {
+		t.Errorf("wildcard ignore_body should produce same key: %s vs %s", key1, key2)
+	}
 }
 
 func TestHashBodyFromReader(t *testing.T) {

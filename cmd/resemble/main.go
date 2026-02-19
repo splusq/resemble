@@ -152,6 +152,7 @@ func startCmd() *cobra.Command {
 			keyOpts := cache.KeyOptions{
 				IgnoreHeaders: cfg.Defaults.IgnoreHeaders,
 				IgnoreQuery:   cfg.Defaults.IgnoreQuery,
+				IgnoreAllBody: cfg.Defaults.IgnoreBody,
 			}
 
 			srv := proxy.NewServer(listen, upstream, mode, cfg.Defaults.TTL, store, keyOpts)

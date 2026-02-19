@@ -15,6 +15,7 @@ type KeyOptions struct {
 	IgnoreHeaders []string
 	IgnoreQuery   []string
 	IgnoreBody    []string // JSON field names to ignore
+	IgnoreAllBody bool     // skip entire body from cache key
 }
 
 func GenerateKey(r *http.Request, body []byte, opts KeyOptions) string {
@@ -32,7 +33,8 @@ func GenerateKey(r *http.Request, body []byte, opts KeyOptions) string {
 	fmt.Fprintf(h, "%s\n", query)
 
 	// Body hash
-	bodyHash := hashBody(body, opts.IgnoreBody)
+	ignoreAllBody := opts.IgnoreAllBody || containsWildcard(opts.IgnoreBody)
+	bodyHash := hashBody(body, opts.IgnoreBody, ignoreAllBody)
 	fmt.Fprintf(h, "%s\n", bodyHash)
 
 	sum := h.Sum(nil)
@@ -52,7 +54,20 @@ func normalizePath(p string) string {
 	return unescaped
 }
 
+func containsWildcard(list []string) bool {
+	for _, v := range list {
+		if v == "*" {
+			return true
+		}
+	}
+	return false
+}
+
 func normalizeQuery(params url.Values, ignore []string) string {
+	if containsWildcard(ignore) {
+		return ""
+	}
+
 	ignoreSet := make(map[string]bool, len(ignore))
 	for _, k := range ignore {
 		ignoreSet[strings.ToLower(k)] = true
@@ -77,8 +92,8 @@ func normalizeQuery(params url.Values, ignore []string) string {
 	return strings.Join(parts, "&")
 }
 
-func hashBody(body []byte, ignoreFields []string) string {
-	if len(body) == 0 {
+func hashBody(body []byte, ignoreFields []string, ignoreAll bool) string {
+	if ignoreAll || len(body) == 0 {
 		return ""
 	}
 
