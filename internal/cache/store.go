@@ -25,7 +25,7 @@ func (s *Store) Dir() string {
 }
 
 func (s *Store) hostDir(host string) string {
-	return filepath.Join(s.baseDir, "cache", host)
+	return filepath.Join(s.baseDir, ".cache", host)
 }
 
 func (s *Store) Get(host, key string) (*Entry, []byte, error) {
@@ -118,7 +118,7 @@ func (s *Store) DeleteByPattern(pattern string) (int, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	cacheDir := filepath.Join(s.baseDir, "cache")
+	cacheDir := filepath.Join(s.baseDir, ".cache")
 	count := 0
 
 	err := filepath.Walk(cacheDir, func(path string, info os.FileInfo, err error) error {
@@ -165,7 +165,7 @@ func (s *Store) Stats(defaultTTL time.Duration) (*Stats, error) {
 		Hosts: make(map[string]int),
 	}
 
-	cacheDir := filepath.Join(s.baseDir, "cache")
+	cacheDir := filepath.Join(s.baseDir, ".cache")
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		return stats, nil
 	}
@@ -220,7 +220,7 @@ func (s *Store) List() ([]Entry, error) {
 	defer s.mu.RUnlock()
 
 	var entries []Entry
-	cacheDir := filepath.Join(s.baseDir, "cache")
+	cacheDir := filepath.Join(s.baseDir, ".cache")
 
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		return entries, nil

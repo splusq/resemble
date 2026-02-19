@@ -160,7 +160,7 @@ func TestStore_CorruptMetaFile(t *testing.T) {
 	s := tempStore(t)
 
 	// Write a corrupt meta file
-	dir := filepath.Join(s.Dir(), "cache", "api.example.com")
+	dir := filepath.Join(s.Dir(), ".cache", "api.example.com")
 	os.MkdirAll(dir, 0755)
 	os.WriteFile(filepath.Join(dir, "corrupt.meta.json"), []byte("not json"), 0644)
 	os.WriteFile(filepath.Join(dir, "corrupt.body"), []byte("body"), 0644)

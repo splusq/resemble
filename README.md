@@ -91,8 +91,8 @@ defaults:
 Cache entries are stored as human-readable files, designed for git:
 
 ```
-<cache-repo>/cache/<upstream-host>/<key>.meta.json
-<cache-repo>/cache/<upstream-host>/<key>.body
+<cache-repo>/.cache/<upstream-host>/<key>.meta.json
+<cache-repo>/.cache/<upstream-host>/<key>.body
 ```
 
 Cache keys are SHA-256 hashes of `method + path + sorted_query + body_hash`, truncated to 16 hex chars.
