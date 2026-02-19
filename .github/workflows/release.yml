@@ -40,9 +40,21 @@ jobs:
           name: binaries
           path: dist/
 
+      - name: Extract version tag
+        id: meta
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          body: |
+            ## Docker
+
+            ```
+            docker pull ghcr.io/splusq/resemble:${{ steps.meta.outputs.version }}
+            ```
+
+            Multi-arch image available for `linux/amd64` and `linux/arm64`.
           files: dist/*
 
   docker:
